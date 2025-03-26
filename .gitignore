@@ -32,6 +32,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+.env.local
+
 
 # vercel
 .vercel
@@ -42,6 +44,7 @@ next-env.d.ts
 
 # Docker-compose
 docker-compose.yml
+docker-compose.override.yml
 
 # Claude
 claude.md 
