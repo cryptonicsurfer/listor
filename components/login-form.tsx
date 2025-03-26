@@ -19,7 +19,13 @@ export function LoginForm({
     e.preventDefault()
     if (!email || !password) return
     
-    await login(email, password)
+    try {
+      console.log('Attempting login with:', { email })
+      const result = await login(email, password)
+      console.log('Login result:', result)
+    } catch (error) {
+      console.error('Login error:', error)
+    }
   }
 
   const domainList = ALLOWED_DOMAINS.join(", ")
