@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  bransch-lista:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bransch-lista
+    restart: always
+    ports:
+      - "3002:3000"  # Using port 3002 since 3001 is already taken
+    networks:
+      - web
+    environment:
+      - NODE_ENV=production
+      - API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYjY2ZjIyZC1iNTRhLTQ0MDMtYjUwZi0zMjY2MzU3ZjBjMTAiLCJ0eXBlIjoiQVBJX0tFWSIsIndvcmtzcGFjZUlkIjoiZWI2NmYyMmQtYjU0YS00NDAzLWI1MGYtMzI2NjM1N2YwYzEwIiwiaWF0IjoxNzQwNTc4Njk0LCJleHAiOjQ4OTQxNzg2OTMsImp0aSI6IjFiMjY0NzkzLTFhZTQtNDcyYS1hMzRhLTE5MWUzMzdlNjA5MCJ9.RNFeQXakLdCdeF8vOiqApY5PbI_N-4eZ7v30inFwwFE
+      # Lägg till fler miljövariabler som din app behöver
+
+networks:
+  web:
+    external: true  # Use the existing network where your other services are running

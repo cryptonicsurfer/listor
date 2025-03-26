@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Docker-compose
+docker-compose.yml
+
+# Claude
+claude.md 
+
