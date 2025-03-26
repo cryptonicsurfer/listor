@@ -1,22 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Branschlista - Falkenberg
+
+A Next.js application for managing branch lists within Falkenberg municipality.
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+ 
+- pnpm
+
+### Setting Up Authentication
+
+This application uses a file-based authentication system with pre-registered users. Before running the application, you need to set up the user data:
+
+1. Create the users.json file (if it doesn't exist):
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Use the provided script
+node scripts/generate-user.js john.doe@falkenberg.se "John Doe" mysecretpassword
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Or manually copy the template:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cp data/users.template.json data/users.json
+```
+
+Then edit the file with your users and their hashed passwords. See `data/README.md` for more details.
+
+### Development
+
+Run the development server:
+
+```bash
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser and login with one of the pre-registered users.
+
+### Authentication System
+
+- Users must have an email from an allowed domain (@falkenberg.se, @ecoera.se)
+- Passwords are stored as SHA-256 hashes in data/users.json (not included in the repository)
+- The users.json file must be manually created on the production server
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 

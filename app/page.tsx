@@ -1,9 +1,13 @@
 import CompanyContactFinder from '@/components/CompanyContactFinder';
+import { Navbar } from '@/components/navbar';
 
 export default function Home() {
   return (
-    <main className="min-h-screen p-4">
-      <CompanyContactFinder />
-    </main>
+    <>
+      <Navbar />
+      <main className="min-h-screen p-4">
+        <CompanyContactFinder />
+      </main>
+    </>
   );
 }

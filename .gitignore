@@ -49,3 +49,6 @@ docker-compose.override.yml
 # Claude
 claude.md 
 
+# User data (contains sensitive information)
+/data/users.json
+
