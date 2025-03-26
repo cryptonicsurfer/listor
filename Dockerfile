@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+RUN npm install -g pnpm && pnpm install --force
 
 # Rebuild the source code only when needed
 FROM base AS builder
