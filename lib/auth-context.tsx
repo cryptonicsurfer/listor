@@ -1,3 +1,4 @@
+'use client';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -31,7 +32,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .find(row => row.startsWith('auth='));
 
         if (authCookie) {
-          const userData = JSON.parse(atob(authCookie.split('=')[1]));
+          // Use atob for base64 decoding in browser context
+          const base64Value = authCookie.split('=')[1];
+          const jsonString = atob(base64Value);
+          
+          const userData = JSON.parse(jsonString);
           setUser(userData);
         }
       } catch (error) {
@@ -76,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     // Clear the auth cookie
-    document.cookie = 'auth=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    document.cookie = 'auth=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Strict;';
     setUser(null);
     router.push('/login');
   };

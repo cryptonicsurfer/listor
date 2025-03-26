@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateUser, isAllowedDomain } from '@/lib/auth';
+import { isAllowedDomain } from '@/lib/auth';
+import { authenticateUser } from './users';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,28 +21,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('Login attempt:', { email });
+    
     const user = authenticateUser(email, password);
-
+    
     if (!user) {
+      console.log('Authentication failed for:', email);
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
       );
     }
+    
+    console.log('Authentication successful for:', email);
 
     // Return user data without password
-    const { password, ...userData } = user;
+    const userData = {
+      email: user.email,
+      name: user.name
+    };
 
-    // In a real app, you'd set proper cookies/tokens here
-    return NextResponse.json({
+    // Set cookie for authentication
+    const response = NextResponse.json({
       user: userData,
-      token: 'authenticated',
-    }, { 
-      status: 200,
-      headers: {
-        'Set-Cookie': `auth=${btoa(JSON.stringify(userData))}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${60 * 60 * 24 * 7}` // 7 days
-      }
+      success: true
+    }, { status: 200 });
+    
+    // Set secure cookie with user data (7 days expiry)
+    const cookieValue = Buffer.from(JSON.stringify(userData)).toString('base64');
+    response.cookies.set({
+      name: 'auth',
+      value: cookieValue,
+      httpOnly: true,
+      path: '/',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
     });
+    
+    return response;
 
   } catch (error) {
     console.error('Authentication error:', error);

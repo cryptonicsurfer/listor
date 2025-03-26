@@ -13,20 +13,21 @@ A Next.js application for managing branch lists within Falkenberg municipality.
 
 This application uses a file-based authentication system with pre-registered users. Before running the application, you need to set up the user data:
 
-1. Create the users.json file (if it doesn't exist):
+1. Initialize all default users at once:
+
+```bash
+# This will create all users with default passwords
+node scripts/init-users.js
+```
+
+2. Or add/update individual users:
 
 ```bash
 # Use the provided script
 node scripts/generate-user.js john.doe@falkenberg.se "John Doe" mysecretpassword
 ```
 
-2. Or manually copy the template:
-
-```bash
-cp data/users.template.json data/users.json
-```
-
-Then edit the file with your users and their hashed passwords. See `data/README.md` for more details.
+The user data is stored in `data/users.json` which is excluded from git via `.gitignore` for security reasons. See `data/README.md` for more details.
 
 ### Development
 

@@ -49,6 +49,15 @@ docker-compose.override.yml
 # Claude
 claude.md 
 
-# User data (contains sensitive information)
+# User data and environment configuration (contains sensitive information)
 /data/users.json
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+
+# Temporary files
+*.log
+*.bak
+*.tmp
 

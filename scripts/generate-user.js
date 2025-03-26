@@ -68,6 +68,25 @@ function main() {
   
   const [email, name, password] = args;
   updateUser(email, name, password);
+  
+  // Generate list of passwords for documentation
+  const users = [
+    { email: "emma.carlstrom@falkenberg.se", name: "Emma Carlström", password: "password1" },
+    { email: "madeleine.nemstrand@falkenberg.se", name: "Madeleine Nemstrand", password: "password2" },
+    { email: "mattias.fornell@falkenberg.se", name: "Mattias Fornell", password: "password3" },
+    { email: "helena.lind@falkenberg.se", name: "Helena Lind", password: "password4" },
+    { email: "linda.bengtsson3@falkenberg.se", name: "Linda Bengtsson", password: "password5" },
+    { email: "elin.rehn@falkenberg.se", name: "Elin Rehn", password: "password6" },
+    { email: "paul.klinteby@falkenberg.se", name: "Paul Klinteby", password: "password7" },
+    { email: "frej.andreassen@falkenberg.se", name: "Frej Andreassen", password: "password8" },
+    { email: "david.andersson@ecoera.se", name: "David Andersson", password: "password9" },
+    { email: "johanna.mars@falkenberg.se", name: "Johanna Mars", password: "password10" }
+  ];
+  
+  console.log('\nUser credential reference (for documentation only, NOT for production):\n');
+  users.forEach(user => {
+    console.log(`${user.name} (${user.email}): ${user.password}`);
+  });
 }
 
 main();
