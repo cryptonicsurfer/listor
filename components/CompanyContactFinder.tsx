@@ -5,27 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, Copy, Mail } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2, Search, Copy, Mail, X } from 'lucide-react';
 
 interface Person {
   id: string;
-  name: {
-    firstName?: string;
-    lastName?: string;
+  name?: string; // Directus has simple string name
+  title?: string; // Directus uses 'title' not 'jobTitle'
+  email?: string; // Directus has simple string email
+  company?: {
+    id: string;
+    name: string;
+    industry?: string;
   };
-  emails?: {
-    primaryEmail?: string;
-    list?: Array<{
-      email?: string;
-    }>;
-  };
-  phones?: {
-    primaryPhone?: string;
-    list?: Array<{
-      phone?: string;
-    }>;
-  };
-  jobTitle?: string;
+  // For backwards compatibility with component
   companyName?: string;
   companyBransch?: string | string[];
   companyId?: string;
@@ -41,8 +34,8 @@ interface Company {
 }
 
 const CompanyContactFinder: React.FC = () => {
-  // State for selected bransch
-  const [selectedBransch, setSelectedBransch] = useState<string>('');
+  // State for selected bransch (now multi-select)
+  const [selectedBransch, setSelectedBransch] = useState<string[]>([]);
   // We no longer need to store API token as it's handled by the backend
   // State for loading
   const [loading, setLoading] = useState<boolean>(false);
@@ -50,6 +43,8 @@ const CompanyContactFinder: React.FC = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
   // State for people data
   const [peopleData, setPeopleData] = useState<Person[]>([]);
+  // State for selected people (checkboxes)
+  const [selectedPeople, setSelectedPeople] = useState<Set<string>>(new Set());
   // State for limit
   const [limit, setLimit] = useState<number>(20);
   // State for error
@@ -58,6 +53,8 @@ const CompanyContactFinder: React.FC = () => {
   const [showCompanies, setShowCompanies] = useState<boolean>(false);
   // State for copy status
   const [copyStatus, setCopyStatus] = useState<string>('');
+  // State for email filter
+  const [emailFilter, setEmailFilter] = useState<'all' | 'with-email' | 'without-email'>('all');
 
   // Bransch options with proper formatting
   const branschOptions: Record<string, string> = {
@@ -77,60 +74,25 @@ const CompanyContactFinder: React.FC = () => {
     'DETALJHANDEL_OCH_SALLANKOP': 'Detaljhandel och sällanköp'
   };
 
-  // Function to extract email from emails object
-  const extractEmail = (emails?: Person['emails']): string => {
-    if (!emails || typeof emails !== 'object') {
-      return "";
-    }
-    
-    const primaryEmail = emails.primaryEmail;
-    if (primaryEmail) {
-      return primaryEmail;
-    }
-    
-    const emailList = emails.list;
-    if (emailList && emailList.length > 0) {
-      return emailList[0].email || "";
-    }
-    
-    return "";
+  // Function to extract email - Directus has simple string
+  const extractEmail = (person: Person): string => {
+    return person.email || "";
   };
 
-  // Function to extract phone from phones object
-  const extractPhone = (phones?: Person['phones']): string => {
-    if (!phones || typeof phones !== 'object') {
-      return "";
-    }
-    
-    const primaryPhone = phones.primaryPhone;
-    if (primaryPhone) {
-      return primaryPhone;
-    }
-    
-    const phoneList = phones.list;
-    if (phoneList && phoneList.length > 0) {
-      return phoneList[0].phone || "";
-    }
-    
-    return "";
+  // Function to extract phone - not available in Directus people
+  const extractPhone = (person: Person): string => {
+    return ""; // Phone not available in current Directus schema
   };
 
-  // Function to extract name from name object
-  const extractName = (nameObj?: Person['name']): string => {
-    if (!nameObj || typeof nameObj !== 'object') {
-      return "";
-    }
-    
-    const firstName = nameObj.firstName || "";
-    const lastName = nameObj.lastName || "";
-    
-    return `${firstName} ${lastName}`.trim();
+  // Function to extract name - Directus has simple string
+  const extractName = (person: Person): string => {
+    return person.name || "";
   };
 
   // Function to get companies by bransch using our API route
   const getCompaniesByBransch = async (): Promise<void> => {
-    if (!selectedBransch) {
-      setError('Please select a bransch');
+    if (selectedBransch.length === 0) {
+      setError('Please select at least one bransch');
       return;
     }
 
@@ -138,46 +100,67 @@ const CompanyContactFinder: React.FC = () => {
     setLoading(true);
     setCompanies([]);
     setPeopleData([]);
+    setSelectedPeople(new Set()); // Reset selected people
 
-  // Filter parameter for bransch
-  const filterParam = `bransch[containsAny]:[${selectedBransch}]`;
+    try {
+      // Fetch companies for each selected bransch
+      const companiesPromises = selectedBransch.map(async (bransch) => {
+        const filterParam = `bransch[containsAny]:[${bransch}]`;
+        const params = new URLSearchParams({
+          "filter": filterParam,
+          "limit": limit.toString()
+        });
 
-  try {
-    // Using our Next.js API route
-    const params = new URLSearchParams({
-      "filter": filterParam,
-      "limit": limit.toString()
-    });
-    
-    // Make the request to our API route - no need to pass API token
-    const response = await fetch(`/api/companies?${params.toString()}`)
-    
-    if (response.status === 200) {
-      const data = await response.json();
-      if (data.data && data.data.companies) {
-        setCompanies(data.data.companies);
-        
-        // Fetch people for each company
-        const peoplePromises = data.data.companies.map((company: Company) => 
-          getPeopleByCompanyId(company.id, company.name, company.bransch)
-        );
-        
-        const peopleResults = await Promise.all(peoplePromises);
-        const allPeople = peopleResults.flat();
-        setPeopleData(allPeople);
-      } else {
-        setError('No companies found or unexpected API response format');
+        const response = await fetch(`/api/companies?${params.toString()}`);
+
+        if (response.status === 200) {
+          const data = await response.json();
+          if (data.data && data.data.companies) {
+            return { companies: data.data.companies, bransch };
+          }
+        }
+        return { companies: [], bransch };
+      });
+
+      const companiesResults = await Promise.all(companiesPromises);
+
+      // Combine all companies (removing duplicates by id)
+      const allCompaniesMap = new Map<string, Company>();
+      companiesResults.forEach(result => {
+        result.companies.forEach((company: Company) => {
+          if (!allCompaniesMap.has(company.id)) {
+            allCompaniesMap.set(company.id, company);
+          }
+        });
+      });
+
+      const allCompanies = Array.from(allCompaniesMap.values());
+      setCompanies(allCompanies);
+
+      // Fetch people for each company with their corresponding bransch
+      const peoplePromises = companiesResults.flatMap(result =>
+        result.companies.map((company: Company) =>
+          getPeopleByCompanyId(company.id, company.name, result.bransch)
+        )
+      );
+
+      const peopleResults = await Promise.all(peoplePromises);
+      const allPeople = peopleResults.flat();
+      setPeopleData(allPeople);
+
+      // Select all people by default
+      const allPeopleIds = new Set(allPeople.map(p => p.id));
+      setSelectedPeople(allPeopleIds);
+
+      if (allCompanies.length === 0) {
+        setError('No companies found for selected bransch(es)');
       }
-    } else {
-      const errorData = await response.json();
-      setError(errorData.error || `Error: ${response.status}`);
+    } catch (err) {
+      console.error("Exception occurred:", err);
+      setError(`Exception occurred: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error("Exception occurred:", err);
-    setError(`Exception occurred: ${err instanceof Error ? err.message : String(err)}`);
-  } finally {
-    setLoading(false);
-  }
   };
 
   // Function to get people by company ID using our API route
@@ -216,36 +199,45 @@ const CompanyContactFinder: React.FC = () => {
     }
   };
 
-  // Simple function to copy table data
+  // Simple function to copy table data (only selected people)
   const copyTableData = () => {
     if (peopleData.length === 0) return;
-    
+
     try {
+      // Filter only selected people
+      const selectedPeopleData = peopleData.filter(person => selectedPeople.has(person.id));
+
+      if (selectedPeopleData.length === 0) {
+        setCopyStatus('No people selected to copy');
+        setTimeout(() => setCopyStatus(''), 3000);
+        return;
+      }
+
       // Create header row
       const headers = ['Company', 'Name', 'Title', 'Email', 'Phone', 'Bransch'];
-      
-      // Create rows for each person
-      const rows = peopleData.map(person => {
-        const branschValue = Array.isArray(person.companyBransch) 
+
+      // Create rows for each selected person
+      const rows = selectedPeopleData.map(person => {
+        const branschValue = Array.isArray(person.companyBransch)
           ? person.companyBransch.map(branch => branschOptions[branch] || branch).join(', ')
           : branschOptions[person.companyBransch || ''] || person.companyBransch || '-';
-        
+
         return [
           person.companyName || '',
-          extractName(person.name),
-          person.jobTitle || '',
-          extractEmail(person.emails) || '',
-          extractPhone(person.phones) || '',
+          extractName(person),
+          person.title || '',
+          extractEmail(person) || '',
+          extractPhone(person) || '',
           branschValue
         ].join('\t');
       });
 
       // Combine headers and rows
       const tableData = [headers.join('\t'), ...rows].join('\n');
-      
+
       // Copy to clipboard
       navigator.clipboard.writeText(tableData);
-      setCopyStatus('Table data copied to clipboard!');
+      setCopyStatus(`Table data copied (${selectedPeopleData.length} people)!`);
       setTimeout(() => setCopyStatus(''), 3000);
     } catch (err) {
       console.error('Failed to copy table data:', err);
@@ -254,22 +246,31 @@ const CompanyContactFinder: React.FC = () => {
     }
   };
 
-  // Simple function to copy email addresses
+  // Simple function to copy email addresses (only selected people)
   const copyEmails = () => {
     if (peopleData.length === 0) return;
-    
+
     try {
-      // Extract all valid email addresses
-      const emails = peopleData
-        .map(person => extractEmail(person.emails))
+      // Filter only selected people
+      const selectedPeopleData = peopleData.filter(person => selectedPeople.has(person.id));
+
+      if (selectedPeopleData.length === 0) {
+        setCopyStatus('No people selected to copy');
+        setTimeout(() => setCopyStatus(''), 3000);
+        return;
+      }
+
+      // Extract all valid email addresses from selected people
+      const emails = selectedPeopleData
+        .map(person => extractEmail(person))
         .filter(email => email !== '');
-      
+
       // Join emails with commas for email clients
       const emailsText = emails.join(', ');
-      
+
       // Copy to clipboard
       navigator.clipboard.writeText(emailsText);
-      setCopyStatus('Email addresses copied to clipboard!');
+      setCopyStatus(`${emails.length} email addresses copied!`);
       setTimeout(() => setCopyStatus(''), 3000);
     } catch (err) {
       console.error('Failed to copy emails:', err);
@@ -278,11 +279,43 @@ const CompanyContactFinder: React.FC = () => {
     }
   };
 
+  // Toggle individual person selection
+  const togglePersonSelection = (personId: string) => {
+    setSelectedPeople(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(personId)) {
+        newSet.delete(personId);
+      } else {
+        newSet.add(personId);
+      }
+      return newSet;
+    });
+  };
+
+  // Toggle all people selection
+  const toggleAllPeople = () => {
+    if (selectedPeople.size === peopleData.length) {
+      setSelectedPeople(new Set());
+    } else {
+      setSelectedPeople(new Set(peopleData.map(p => p.id)));
+    }
+  };
+
   // Handler for form submission
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     getCompaniesByBransch();
   };
+
+  // Filter people based on email filter
+  const filteredPeopleData = peopleData.filter(person => {
+    if (emailFilter === 'with-email') {
+      return extractEmail(person) !== '';
+    } else if (emailFilter === 'without-email') {
+      return extractEmail(person) === '';
+    }
+    return true; // 'all'
+  });
 
   // No longer needed as we're using direct table elements
   // for better scroll control
@@ -300,19 +333,52 @@ const CompanyContactFinder: React.FC = () => {
           <form onSubmit={handleSubmit}>
             <div className="flex flex-wrap gap-4 items-end">
               <div className="flex-grow min-w-[200px]">
-                <label className="block text-sm font-medium mb-1">Select Bransch</label>
-                <Select value={selectedBransch} onValueChange={setSelectedBransch}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a bransch" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(branschOptions).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <label className="block text-sm font-medium mb-1">Select Bransch (Multi-select)</label>
+                <div className="relative">
+                  <Select
+                    onValueChange={(value) => {
+                      if (!selectedBransch.includes(value)) {
+                        const newSelection = [...selectedBransch, value];
+                        setSelectedBransch(newSelection);
+                        // Auto-adjust limit when multiple bransches selected
+                        if (newSelection.length > 1 && limit === 20) {
+                          setLimit(60);
+                        }
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={selectedBransch.length === 0 ? "Select bransch(es)" : `${selectedBransch.length} selected`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(branschOptions).map(([value, label]) => (
+                        <SelectItem key={value} value={value} disabled={selectedBransch.includes(value)}>
+                          {label} {selectedBransch.includes(value) ? '✓' : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedBransch.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {selectedBransch.map(branch => (
+                        <Badge key={branch} variant="secondary" className="flex items-center gap-1">
+                          {branschOptions[branch]}
+                          <X
+                            className="h-3 w-3 cursor-pointer"
+                            onClick={() => {
+                              const newSelection = selectedBransch.filter(b => b !== branch);
+                              setSelectedBransch(newSelection);
+                              // Reset limit if back to single or no selection
+                              if (newSelection.length <= 1 && limit === 60) {
+                                setLimit(20);
+                              }
+                            }}
+                          />
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
               
               <div className="w-24">
@@ -411,25 +477,40 @@ const CompanyContactFinder: React.FC = () => {
         <Card>
           <CardHeader className="pb-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <CardTitle>Contacts ({peopleData.length})</CardTitle>
+              <div>
+                <CardTitle>Contacts ({peopleData.length})</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {selectedPeople.size} selected · {filteredPeopleData.length} shown
+                </p>
+              </div>
               <div className="flex gap-2">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
+                <Select value={emailFilter} onValueChange={(value: 'all' | 'with-email' | 'without-email') => setEmailFilter(value)}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by email" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All contacts</SelectItem>
+                    <SelectItem value="with-email">With email</SelectItem>
+                    <SelectItem value="without-email">Without email</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  variant="outline"
                   onClick={copyTableData}
                   className="flex items-center gap-1"
                 >
                   <Copy className="h-4 w-4" />
-                  Copy Table
+                  Copy Table ({selectedPeople.size})
                 </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
+                <Button
+                  size="sm"
+                  variant="outline"
                   onClick={copyEmails}
                   className="flex items-center gap-1"
                 >
                   <Mail className="h-4 w-4" />
-                  Copy Emails
+                  Copy Emails ({selectedPeople.size})
                 </Button>
               </div>
             </div>
@@ -445,6 +526,22 @@ const CompanyContactFinder: React.FC = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr>
+                      <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground w-12">
+                        <Checkbox
+                          checked={selectedPeople.size === filteredPeopleData.length && filteredPeopleData.length > 0}
+                          onCheckedChange={() => {
+                            if (selectedPeople.size === filteredPeopleData.length) {
+                              // Deselect all filtered people
+                              const filteredIds = new Set(filteredPeopleData.map(p => p.id));
+                              setSelectedPeople(prev => new Set([...prev].filter(id => !filteredIds.has(id))));
+                            } else {
+                              // Select all filtered people
+                              const filteredIds = filteredPeopleData.map(p => p.id);
+                              setSelectedPeople(prev => new Set([...prev, ...filteredIds]));
+                            }
+                          }}
+                        />
+                      </th>
                       <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Company</th>
                       <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Name</th>
                       <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Title</th>
@@ -458,13 +555,19 @@ const CompanyContactFinder: React.FC = () => {
               <div className="max-h-[500px] overflow-y-auto overflow-x-hidden">
                 <table className="w-full table-fixed text-sm">
                   <tbody className="[&_tr:last-child]:border-0">
-                    {peopleData.map((person) => (
+                    {filteredPeopleData.map((person) => (
                       <tr key={person.id} className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                        <td className="p-4 align-middle w-12">
+                          <Checkbox
+                            checked={selectedPeople.has(person.id)}
+                            onCheckedChange={() => togglePersonSelection(person.id)}
+                          />
+                        </td>
                         <td className="p-4 align-middle">{person.companyName}</td>
-                        <td className="p-4 align-middle">{extractName(person.name)}</td>
-                        <td className="p-4 align-middle">{person.jobTitle || '-'}</td>
-                        <td className="p-4 align-middle">{extractEmail(person.emails) || '-'}</td>
-                        <td className="p-4 align-middle">{extractPhone(person.phones) || '-'}</td>
+                        <td className="p-4 align-middle">{extractName(person)}</td>
+                        <td className="p-4 align-middle">{person.title || '-'}</td>
+                        <td className="p-4 align-middle">{extractEmail(person) || '-'}</td>
+                        <td className="p-4 align-middle">{extractPhone(person) || '-'}</td>
                         <td className="p-4 align-middle">
                           {Array.isArray(person.companyBransch) ? (
                             person.companyBransch.map((branch) => (

@@ -1,10 +1,11 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { loginToDirectus, getAuthDetails, removeToken } from './auth';
 
 interface User {
   email: string;
-  name: string;
+  name?: string;
 }
 
 interface AuthContextType {
@@ -27,17 +28,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check if user is logged in on initial load
     const checkAuth = async () => {
       try {
-        const authCookie = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('auth='));
-
-        if (authCookie) {
-          // Use atob for base64 decoding in browser context
-          const base64Value = authCookie.split('=')[1];
-          const jsonString = atob(base64Value);
-          
-          const userData = JSON.parse(jsonString);
-          setUser(userData);
+        const authDetails = getAuthDetails();
+        if (authDetails) {
+          // User has valid tokens in localStorage
+          // We could fetch user details from Directus here if needed
+          setUser({ email: 'authenticated' }); // Placeholder
         }
       } catch (error) {
         console.error('Auth check error:', error);
@@ -54,25 +49,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
 
     try {
-      const response = await fetch('/api/auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const authData = await loginToDirectus(email, password);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
+      if (authData?.data?.access_token) {
+        setUser({ email });
+        router.push('/');
+        return true;
+      } else {
+        throw new Error('Login failed. Please check your credentials.');
       }
-
-      setUser(data.user);
-      router.push('/');
-      return true;
     } catch (error: unknown) {
-      setError((error instanceof Error) ? error.message : 'Login failed');
+      const errorMessage = (error instanceof Error) ? error.message : 'Login failed';
+      setError(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -80,8 +68,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    // Clear the auth cookie
-    document.cookie = 'auth=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Strict;';
+    // Clear Directus tokens
+    removeToken();
+
+    // Clear Directus cookies
+    document.cookie = 'directus_access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax;';
+    document.cookie = 'directus_refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax;';
+
     setUser(null);
     router.push('/login');
   };

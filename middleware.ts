@@ -4,10 +4,11 @@ export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isPublicPath = path === '/login';
   const isApiPath = path.startsWith('/api/');
-  
-  // Get the authentication cookie
-  const authCookie = request.cookies.get('auth')?.value;
-  const isAuthenticated = !!authCookie;
+
+  // Get the Directus authentication cookie
+  const directusAccessToken = request.cookies.get('directus_access_token')?.value;
+  const directusRefreshToken = request.cookies.get('directus_refresh_token')?.value;
+  const isAuthenticated = !!(directusAccessToken || directusRefreshToken);
 
   // If the path is public or an API endpoint, allow the request
   if (isPublicPath || isApiPath) {
