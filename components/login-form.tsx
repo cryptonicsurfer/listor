@@ -1,5 +1,6 @@
 'use client'
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,15 +15,21 @@ export function LoginForm({
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const { login, isLoading, error } = useAuth()
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email || !password) return
-    
+
     try {
       console.log('Attempting login with:', { email })
       const result = await login(email, password)
       console.log('Login result:', result)
+
+      // Redirect to home page on successful login
+      if (result) {
+        router.push('/')
+      }
     } catch (error) {
       console.error('Login error:', error)
     }
