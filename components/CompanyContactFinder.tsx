@@ -227,7 +227,7 @@ const CompanyContactFinder: React.FC = () => {
           extractName(person),
           person.title || '',
           extractEmail(person) || '',
-          extractPhone(person) || '',
+          extractPhone() || '',
           branschValue
         ].join('\t');
       });
@@ -559,7 +559,7 @@ const CompanyContactFinder: React.FC = () => {
                         <td className="p-4 align-middle">{extractName(person)}</td>
                         <td className="p-4 align-middle">{person.title || '-'}</td>
                         <td className="p-4 align-middle">{extractEmail(person) || '-'}</td>
-                        <td className="p-4 align-middle">{extractPhone(person) || '-'}</td>
+                        <td className="p-4 align-middle">{extractPhone() || '-'}</td>
                         <td className="p-4 align-middle">
                           {Array.isArray(person.companyBransch) ? (
                             person.companyBransch.map((branch) => (
