@@ -105,10 +105,11 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(transformedResponse, { status: 200 });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Companies API] Internal server error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: `Internal server error: ${error.message}` },
+      { error: `Internal server error: ${errorMessage}` },
       { status: 500 }
     );
   }

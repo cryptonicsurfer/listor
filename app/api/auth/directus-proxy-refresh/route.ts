@@ -34,8 +34,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json(responseBody, { status: 200 });
 
     if (responseBody.data && responseBody.data.access_token && responseBody.data.refresh_token && responseBody.data.expires) {
-      const { access_token, refresh_token, expires } = responseBody.data;
-      const expiresInMs = parseInt(expires as string, 10);
+      const { access_token, refresh_token } = responseBody.data;
 
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
       const secureFlag = appUrl.startsWith('https://');

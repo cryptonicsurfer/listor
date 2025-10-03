@@ -80,7 +80,7 @@ const CompanyContactFinder: React.FC = () => {
   };
 
   // Function to extract phone - not available in Directus people
-  const extractPhone = (person: Person): string => {
+  const extractPhone = (): string => {
     return ""; // Phone not available in current Directus schema
   };
 
@@ -292,14 +292,6 @@ const CompanyContactFinder: React.FC = () => {
     });
   };
 
-  // Toggle all people selection
-  const toggleAllPeople = () => {
-    if (selectedPeople.size === peopleData.length) {
-      setSelectedPeople(new Set());
-    } else {
-      setSelectedPeople(new Set(peopleData.map(p => p.id)));
-    }
-  };
 
   // Handler for form submission
   const handleSubmit = (e: React.FormEvent): void => {

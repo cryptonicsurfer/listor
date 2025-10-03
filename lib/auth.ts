@@ -57,9 +57,10 @@ export async function loginToDirectus(
       storeAuthDetails(responseData.data);
     }
     return responseData as DirectusAuthResponse;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error during proxied Directus login:", error);
-    throw new Error(error.message || "An unexpected error occurred during login via proxy.");
+    const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred during login via proxy.";
+    throw new Error(errorMessage);
   }
 }
 
