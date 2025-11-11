@@ -113,6 +113,11 @@ const CompanyContactFinder: React.FC = () => {
 
         const response = await fetch(`/api/companies?${params.toString()}`);
 
+        // Check for authentication errors
+        if (response.status === 401) {
+          throw new Error('SESSION_EXPIRED');
+        }
+
         if (response.status === 200) {
           const data = await response.json();
           if (data.data && data.data.companies) {
@@ -157,7 +162,15 @@ const CompanyContactFinder: React.FC = () => {
       }
     } catch (err) {
       console.error("Exception occurred:", err);
-      setError(`Exception occurred: ${err instanceof Error ? err.message : String(err)}`);
+      if (err instanceof Error && err.message === 'SESSION_EXPIRED') {
+        setError('Your session has expired. Please log in again.');
+        // Redirect to login after a short delay
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 2000);
+      } else {
+        setError(`Exception occurred: ${err instanceof Error ? err.message : String(err)}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -172,11 +185,16 @@ const CompanyContactFinder: React.FC = () => {
     const params = new URLSearchParams({
       "filter": `companyId[eq]:${companyId}`
     });
-    
+
     try {
       // Make the request to our API route - no need to pass API token
       const response = await fetch(`/api/people?${params.toString()}`);
-      
+
+      // Check for authentication errors
+      if (response.status === 401) {
+        throw new Error('SESSION_EXPIRED');
+      }
+
       if (response.status === 200) {
         const data = await response.json();
         if (data.data && data.data.people) {
@@ -195,6 +213,10 @@ const CompanyContactFinder: React.FC = () => {
       }
     } catch (err) {
       console.error(`Exception occurred while fetching people: ${err}`);
+      // Re-throw SESSION_EXPIRED errors so they can be caught by the caller
+      if (err instanceof Error && err.message === 'SESSION_EXPIRED') {
+        throw err;
+      }
       return [];
     }
   };

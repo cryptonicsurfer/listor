@@ -10,8 +10,18 @@ export function middleware(request: NextRequest) {
   const directusRefreshToken = request.cookies.get('directus_refresh_token')?.value;
   const isAuthenticated = !!(directusAccessToken || directusRefreshToken);
 
-  // If the path is public or an API endpoint, allow the request
-  if (isPublicPath || isApiPath) {
+  // Allow API requests to proceed (they handle their own auth)
+  if (isApiPath) {
+    return NextResponse.next();
+  }
+
+  // If user is authenticated and tries to access login, redirect to home
+  if (isAuthenticated && isPublicPath) {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
+  // If user is not authenticated and tries to access login, allow it
+  if (!isAuthenticated && isPublicPath) {
     return NextResponse.next();
   }
 
@@ -20,11 +30,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // If user is authenticated and tries to access login, redirect to home
-  if (isAuthenticated && isPublicPath) {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
-
+  // User is authenticated and accessing a protected route, allow it
   return NextResponse.next();
 }
 
