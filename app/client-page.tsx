@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import CompanyContactFinder from '@/components/CompanyContactFinder';
 import { Navbar } from '@/components/navbar';
-import { getAuthDetails, tryRefreshFromCookies } from '@/lib/auth';
+import { getAuthDetails, tryRefreshFromCookies, clearAuthCookies, removeToken } from '@/lib/auth';
 
 export default function HomeClientPage() {
   const [isChecking, setIsChecking] = useState(true);
@@ -33,17 +33,16 @@ export default function HomeClientPage() {
           return;
         }
 
-        // Refresh failed - clear cookies and redirect to login
+        // Refresh failed - clear cookies via API and redirect to login
         console.log('Token refresh failed, clearing cookies and redirecting to login');
-        // Clear cookies by calling a logout-like action
-        document.cookie = 'directus_access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax;';
-        document.cookie = 'directus_refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax;';
+        removeToken(); // Clear localStorage
+        await clearAuthCookies(); // Clear HttpOnly cookies via API
         router.push('/login');
       } catch (error) {
         console.error('Auth check failed:', error);
         // Clear cookies to prevent redirect loop
-        document.cookie = 'directus_access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax;';
-        document.cookie = 'directus_refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax;';
+        removeToken(); // Clear localStorage
+        await clearAuthCookies(); // Clear HttpOnly cookies via API
         router.push('/login');
       }
     };

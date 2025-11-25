@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth-context"
 
 export function Navbar() {
-  const { user, logout } = useAuth()
+  const { logout } = useAuth()
 
   return (
     <header className="bg-background border-b">
@@ -18,23 +18,18 @@ export function Navbar() {
             <span className="font-semibold">Branschlista</span>
           </Link>
         </div>
-        
-        {user && (
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground hidden md:inline-block">
-              {user.name}
-            </span>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={logout}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <LogOutIcon className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
-          </div>
-        )}
+
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => logout()}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <LogOutIcon className="h-4 w-4 mr-2" />
+            Logga ut
+          </Button>
+        </div>
       </div>
     </header>
   )

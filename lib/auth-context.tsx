@@ -1,7 +1,7 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { loginToDirectus, getAuthDetails, removeToken } from './auth';
+import { loginToDirectus, getAuthDetails, removeToken, clearAuthCookies } from './auth';
 
 interface User {
   email: string;
@@ -11,7 +11,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
 }
@@ -67,13 +67,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
-    // Clear Directus tokens
+  const logout = async () => {
+    // Clear Directus tokens from localStorage
     removeToken();
 
-    // Clear Directus cookies
-    document.cookie = 'directus_access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax;';
-    document.cookie = 'directus_refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax;';
+    // Clear HttpOnly cookies via API
+    await clearAuthCookies();
 
     setUser(null);
     router.push('/login');

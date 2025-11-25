@@ -96,8 +96,30 @@ export function removeToken(): void {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(EXPIRY_TIMESTAMP_KEY);
-    console.log("All auth tokens removed.");
+    console.log("All auth tokens removed from localStorage.");
   }
+}
+
+// Clear HttpOnly cookies via server-side API
+export async function clearAuthCookies(): Promise<void> {
+  try {
+    const response = await fetch('/api/auth/logout', {
+      method: 'POST',
+    });
+    if (response.ok) {
+      console.log("[AUTH_LIB] HttpOnly cookies cleared via API.");
+    } else {
+      console.error("[AUTH_LIB] Failed to clear cookies via API:", response.status);
+    }
+  } catch (error) {
+    console.error("[AUTH_LIB] Error clearing cookies via API:", error);
+  }
+}
+
+// Full logout - clears both localStorage and HttpOnly cookies
+export async function fullLogout(): Promise<void> {
+  removeToken();
+  await clearAuthCookies();
 }
 
 async function refreshAccessToken(): Promise<DirectusTokenData | null> {
