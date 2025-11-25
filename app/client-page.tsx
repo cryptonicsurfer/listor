@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import CompanyContactFinder from '@/components/CompanyContactFinder';
 import { Navbar } from '@/components/navbar';
-import { getAuthDetails } from '@/lib/auth';
+import { getAuthDetails, tryRefreshFromCookies } from '@/lib/auth';
 
 export default function HomeClientPage() {
   const [isChecking, setIsChecking] = useState(true);
@@ -15,15 +15,35 @@ export default function HomeClientPage() {
     const checkAuth = async () => {
       try {
         const authDetails = getAuthDetails();
-        if (!authDetails) {
-          // No auth details found, redirect to login
-          router.push('/login');
+        if (authDetails) {
+          // User has auth details in localStorage, allow access
+          setIsChecking(false);
           return;
         }
-        // User has auth details, allow access
-        setIsChecking(false);
+
+        // No localStorage tokens, but middleware let us through (means cookies exist)
+        // Try to refresh tokens to sync localStorage with cookies
+        console.log('No localStorage tokens, attempting to refresh from cookies...');
+        const accessToken = await tryRefreshFromCookies();
+
+        if (accessToken) {
+          // Refresh worked, tokens are now in localStorage
+          console.log('Token refresh successful, user authenticated');
+          setIsChecking(false);
+          return;
+        }
+
+        // Refresh failed - clear cookies and redirect to login
+        console.log('Token refresh failed, clearing cookies and redirecting to login');
+        // Clear cookies by calling a logout-like action
+        document.cookie = 'directus_access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax;';
+        document.cookie = 'directus_refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax;';
+        router.push('/login');
       } catch (error) {
         console.error('Auth check failed:', error);
+        // Clear cookies to prevent redirect loop
+        document.cookie = 'directus_access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax;';
+        document.cookie = 'directus_refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax;';
         router.push('/login');
       }
     };

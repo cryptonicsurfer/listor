@@ -132,13 +132,35 @@ async function refreshAccessToken(): Promise<DirectusTokenData | null> {
   }
 }
 
+// Try to refresh tokens using cookies (for when localStorage is empty but cookies exist)
+export async function tryRefreshFromCookies(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+
+  console.log("[AUTH_LIB] tryRefreshFromCookies: Attempting to refresh using HttpOnly cookies.");
+
+  try {
+    const newTokensData = await refreshAccessToken();
+    if (newTokensData) {
+      storeAuthDetails(newTokensData);
+      console.log("[AUTH_LIB] tryRefreshFromCookies: Token refresh successful, tokens stored in localStorage.");
+      return newTokensData.access_token;
+    } else {
+      console.log("[AUTH_LIB] tryRefreshFromCookies: Token refresh failed (no tokens returned).");
+      return null;
+    }
+  } catch (error) {
+    console.error("[AUTH_LIB] tryRefreshFromCookies: Exception during refresh:", error);
+    return null;
+  }
+}
+
 export async function getAccessToken(): Promise<string | null> {
   if (typeof window === "undefined") return null;
 
   const authDetails = getAuthDetails();
 
   if (!authDetails) {
-    console.log("No auth details found.");
+    console.log("No auth details found in localStorage. Try using tryRefreshFromCookies() to sync from cookies.");
     return null;
   }
 

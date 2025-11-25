@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       const { access_token, refresh_token } = responseBody.data;
 
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
-      const secureFlag = appUrl.startsWith('https://');
+      const secureFlag = process.env.NODE_ENV === 'production' || appUrl.startsWith('https://');
 
       response.cookies.set('directus_access_token', access_token, {
         httpOnly: true,
