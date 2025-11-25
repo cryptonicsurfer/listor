@@ -8,8 +8,8 @@ export function Navbar() {
   const { logout } = useAuth()
 
   return (
-    <header className="bg-background border-b">
-      <div className="container flex h-14 items-center justify-between">
+    <header className="bg-white border-b shadow-sm">
+      <div className="container mx-auto px-4 flex h-14 items-center justify-between">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2 font-medium">
             <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">

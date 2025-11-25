@@ -62,11 +62,11 @@ export default function HomeClientPage() {
   }
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="min-h-screen p-4">
+      <main className="flex-1 p-4">
         <CompanyContactFinder />
       </main>
-    </>
+    </div>
   );
 }

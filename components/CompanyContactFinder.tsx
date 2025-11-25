@@ -335,8 +335,8 @@ const CompanyContactFinder: React.FC = () => {
   // for better scroll control
 
   return (
-    <div className="container mx-auto pt-[200px] pb-8">
-      <div className="fixed top-0 left-0 right-0 z-30 bg-background pb-6 pt-8 px-4 md:px-0 shadow-md border-b">
+    <div className="container mx-auto pt-[260px] pb-8">
+      <div className="fixed top-14 left-0 right-0 z-30 bg-background pb-6 pt-8 px-4 md:px-0 shadow-md border-b">
         <div className="container mx-auto">
           <Card className="shadow-md">
         <CardHeader className="pb-2">
