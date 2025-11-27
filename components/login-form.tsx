@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/lib/auth-context"
-import { ALLOWED_DOMAINS } from "@/lib/auth"
 
 export function LoginForm({
   className,
@@ -35,8 +34,6 @@ export function LoginForm({
     }
   }
 
-  const domainList = ALLOWED_DOMAINS.join(", ")
-
   return (
     <form 
       className={cn("flex flex-col gap-6", className)} 
@@ -52,17 +49,14 @@ export function LoginForm({
       <div className="grid gap-6">
         <div className="grid gap-3">
           <Label htmlFor="email">Email</Label>
-          <Input 
-            id="email" 
-            type="email" 
-            placeholder="name@falkenberg.se" 
+          <Input
+            id="email"
+            type="email"
+            placeholder="namn@falkenberg.se"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            required 
+            required
           />
-          <p className="text-muted-foreground text-xs">
-            Allowed domains: {domainList}
-          </p>
         </div>
         <div className="grid gap-3">
           <div className="flex items-center">
@@ -83,7 +77,7 @@ export function LoginForm({
           {isLoading ? "Logging in..." : "Login"}
         </Button>
         <p className="text-muted-foreground text-sm text-center">
-          This is a restricted application. Only pre-registered users with allowed email domains can login.
+          Endast registrerade användare kan logga in.
         </p>
       </div>
     </form>

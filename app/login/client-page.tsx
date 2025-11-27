@@ -27,10 +27,10 @@ export default function LoginClientPage() {
           <div className="text-center p-8">
             <h2 className="text-3xl font-bold mb-4">Falkenberg Branschlista</h2>
             <p className="text-lg mb-6">
-              En intern tjänst för anställda inom Falkenbergs kommun och Ecoera.
+              En intern tjänst för Business Falkenberg.
             </p>
             <p className="text-muted-foreground">
-              Logga in med din arbetsmail för att få tillgång.
+              Logga in med din @falkenberg.se-mail för att få tillgång.
             </p>
           </div>
         </div>

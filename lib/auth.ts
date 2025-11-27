@@ -1,7 +1,7 @@
 // Directus authentication library
 
 // Allowed domains (kept for compatibility)
-export const ALLOWED_DOMAINS = ["falkenberg.se", "ecoera.se"];
+export const ALLOWED_DOMAINS = ["falkenberg.se"];
 
 interface DirectusTokenData {
   access_token: string;
