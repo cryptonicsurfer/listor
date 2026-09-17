@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm && pnpm install --force
+RUN npm install -g pnpm@10 && pnpm install --force
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -18,7 +18,7 @@ COPY . .
 # Next.js collects anonymous telemetry data about general usage, disable it
 ENV NEXT_TELEMETRY_DISABLED 1
 
-RUN npm install -g pnpm && pnpm build
+RUN npm install -g pnpm@10 && pnpm build
 
 # Production image, copy all the files and run next
 FROM base AS runner
